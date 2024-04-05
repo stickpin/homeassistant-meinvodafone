@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "description": "Fill in MeinVodafone information"
+      },
+      "select_contract": {
+        "title": "Contract",
+        "description": "The following contracts was found. Please select the contract you wish to monitor",
+        "data": {
+          "contract": "Contract Number"
+        }
+      },
+      "reauth_confirm": {
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        },
+        "description": "Re-authenticate with your MeinVodafone account"
+      }
+    },
+    "abort": {
+      "already_configured": "Contact is already configured",
+      "reauth_successful": "Re-authentication was successful"
+    },
+    "error": {
+      "login_failed": "Unable not login to MeinVodafone, please check your credentials and verify that the service is working"
+    }
+  }
+}

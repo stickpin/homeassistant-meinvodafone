@@ -1,0 +1,16 @@
+{
+  "domain": "meinvodafone",
+  "name": "MeinVodafone",
+  "codeowners": ["@stickpin"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/stickpin/homeassistant-meinvodafone",
+  "homekit": {},
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/stickpin/homeassistant-meinvodafone/issues",
+  "requirements": [],
+  "ssdp": [],
+  "version": "v1.0.0",
+  "zeroconf": []
+}

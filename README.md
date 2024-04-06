@@ -27,6 +27,7 @@ Currently, integration is not part of the HACS, so you will have to add the repo
 1. Go to Settings -> Devices & Services
 2. Shift reload your browser
 3. Click Add Integration
+
 4. Search for MeinVodafone
 ![find_integration](images/find_integration.png)
 

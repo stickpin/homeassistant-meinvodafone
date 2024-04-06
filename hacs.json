@@ -1,7 +1,4 @@
 {
     "name": "MeinVodafone",
-    "homeassistant": "2024.3.0",
-    "hide_default_branch": true,
-    "zip_release": true,
-    "filename": "meinvodafone.zip"
+    "homeassistant": "2024.3.0"
 }

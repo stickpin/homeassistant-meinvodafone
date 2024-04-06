@@ -284,6 +284,4 @@ class MeinVodafoneEntities:
 
     def __init__(self, contract) -> None:
         """Initialize instruments."""
-        self.entities_list = [
-            entity for entity in create_entities() if entity.setup(contract)
-        ]
+        self.entities_list = [entity for entity in create_entities() if entity.setup(contract)]

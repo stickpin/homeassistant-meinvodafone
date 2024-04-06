@@ -1,4 +1,5 @@
 """Sensor platform for meinvodafone integration."""
+
 from __future__ import annotations
 
 import logging
@@ -21,9 +22,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Initialize meinvodafone config entry."""
-    coordinator: MeinVodafoneCoordinator = hass.data[DOMAIN][config_entry.entry_id][
-        COORDINATOR
-    ]
+    coordinator: MeinVodafoneCoordinator = hass.data[DOMAIN][config_entry.entry_id][COORDINATOR]
 
     if coordinator.contract:
         async_add_entities(
@@ -41,11 +40,7 @@ async def async_setup_entry(
                 state_class=SensorStateClass.MEASUREMENT,
                 display_precision=entity.display_precision,
             )
-            for entity in (
-                entity
-                for entity in coordinator.entities_list
-                if entity.component == "sensor"
-            )
+            for entity in (entity for entity in coordinator.entities_list if entity.component == "sensor")
         )
 
 
@@ -95,22 +90,14 @@ class MeinVodafoneSensor(MeinVodafoneEntity, SensorEntity):
     def extra_state_attributes(self) -> dict:
         """Return sensor specific state attributes."""
         attributes = {
-            "last_update": getattr(
-                self.coordinator.contract, self.attr + "_last_update"
-            ),
+            "last_update": getattr(self.coordinator.contract, self.attr + "_last_update"),
         }
         if hasattr(self.coordinator.contract, "billing_cycle_start"):
-            attributes["billing_cycle_start"] = getattr(
-                self.coordinator.contract, "billing_cycle_start"
-            )
+            attributes["billing_cycle_start"] = getattr(self.coordinator.contract, "billing_cycle_start")
         if hasattr(self.coordinator.contract, "billing_cycle_end"):
-            attributes["billing_cycle_end"] = getattr(
-                self.coordinator.contract, "billing_cycle_end"
-            )
+            attributes["billing_cycle_end"] = getattr(self.coordinator.contract, "billing_cycle_end")
         if self.plan_name:
-            attributes["package_name"] = getattr(
-                self.coordinator.contract, self.plan_name
-            )
+            attributes["package_name"] = getattr(self.coordinator.contract, self.plan_name)
         return attributes
 
     @callback

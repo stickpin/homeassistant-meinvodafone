@@ -42,9 +42,7 @@ class MeinVodafoneContract:
 
         self.usage_data = usage_data
 
-    def get_value(
-        self, container: str, key: str, index: int | None = None
-    ) -> str | None:
+    def get_value(self, container: str, key: str, index: int | None = None) -> str | None:
         """Return value if found in the usage data."""
         container_data = self.usage_data.get(container, None)
         if index is not None and container_data and 0 <= index < len(container_data):
@@ -480,13 +478,9 @@ class MeinVodafoneContract:
     def billing_cycle_days(self):
         """Return days until end of the billing cycle."""
         datetime_now = (
-            datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .replace(hour=0, minute=0, second=0, microsecond=0)
+            datetime.datetime.now(datetime.UTC).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
         )
-        cycle_end = datetime.datetime.strptime(
-            self.billing_cycle_end, "%Y-%m-%d"
-        ).replace(tzinfo=None)
+        cycle_end = datetime.datetime.strptime(self.billing_cycle_end, "%Y-%m-%d").replace(tzinfo=None)
         delta = cycle_end - datetime_now
 
         return delta.days

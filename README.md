@@ -1,3 +1,8 @@
+![Version](https://img.shields.io/github/v/release/stickpin/homeassistant-meinvodafone)
+![Downloads](https://img.shields.io/github/downloads/stickpin/homeassistant-meinvodafone/total)
+![CodeStyle](https://img.shields.io/badge/code%20style-black-black)
+
+
 # MeinVodafone - Home Assistant Integration
 
 ## About this repo

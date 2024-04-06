@@ -28,16 +28,16 @@ Currently, integration is not part of the HACS, so you will have to add the repo
 2. Shift reload your browser
 3. Click Add Integration
 
-4. Search for MeinVodafone
+4. Search for MeinVodafone<br />
 ![find_integration](images/find_integration.png)
 
-5. Enter your username and password, press submit
+5. Enter your username and password, press submit<br />
 ![enter_user_pass](images/enter_user_pass.png)
 
-6. Select contract and press submit
+6. Select contract and press submit<br />
 ![select_contract](images/select_contract.png)
 
-7. If you see this screen, your configuration is successful.
+7. If you see this screen, your configuration is successful<br />
 ![config_success](images/config_success.png)
 
 ---

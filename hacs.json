@@ -1,4 +1,5 @@
 {
     "name": "MeinVodafone",
-    "homeassistant": "2024.3.0"
+    "homeassistant": "2024.3.0",
+    "country": "DE"
 }

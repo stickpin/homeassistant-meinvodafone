@@ -1,6 +1,7 @@
 ![Version](https://img.shields.io/github/v/release/stickpin/homeassistant-meinvodafone)
 ![Downloads](https://img.shields.io/github/downloads/stickpin/homeassistant-meinvodafone/total)
 ![CodeStyle](https://img.shields.io/badge/code%20style-black-black)
+[![CodeQL](https://github.com/stickpin/homeassistant-meinvodafone/actions/workflows/codeql.yml/badge.svg)](https://github.com/stickpin/homeassistant-meinvodafone/actions/workflows/codeql.yml)
 
 
 # MeinVodafone - Home Assistant Integration

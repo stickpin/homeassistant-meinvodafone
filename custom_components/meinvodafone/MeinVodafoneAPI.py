@@ -58,7 +58,9 @@ class MeinVodafoneAPI:
                 "User-Agent": USER_AGENT,
             }
 
-            async with self.session.post(url, headers=headers, json=payload) as response:
+            async with self.session.post(
+                url, headers=headers, json=payload
+            ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
@@ -97,7 +99,9 @@ class MeinVodafoneAPI:
                 "X-Vf-Clientid": X_VF_CLIENT_ID,
             }
 
-            async with self.session.get(url, headers=headers, allow_redirects=False) as response:
+            async with self.session.get(
+                url, headers=headers, allow_redirects=False
+            ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
@@ -119,7 +123,9 @@ class MeinVodafoneAPI:
                         response.text,
                     )
         except Exception as error:
-            _LOGGER.error("Error during the contracts retrieval proccess, error %s", error)
+            _LOGGER.error(
+                "Error during the contracts retrieval proccess, error %s", error
+            )
         return contracts
 
     async def get_contract_usage(self, contract_number) -> dict:
@@ -151,7 +157,9 @@ class MeinVodafoneAPI:
                 "daten": DATA,
             }
 
-            async with self.session.get(url, headers=headers, allow_redirects=False) as response:
+            async with self.session.get(
+                url, headers=headers, allow_redirects=False
+            ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
@@ -161,8 +169,12 @@ class MeinVodafoneAPI:
                     service_usage_vbo = response_data.get("serviceUsageVBO", {})
                     billing_details = service_usage_vbo.get("billDetails", {})
 
-                    billing_currect_summary = billing_details.get("currentSummary", {}).get("amount")
-                    billing_last_summary = billing_details.get("lastSummary", {}).get("amount")
+                    billing_currect_summary = billing_details.get(
+                        "currentSummary", {}
+                    ).get("amount")
+                    billing_last_summary = billing_details.get("lastSummary", {}).get(
+                        "amount"
+                    )
                     billing_cycle_start = billing_details.get("billCycleStartDate")
                     billing_cycle_end = billing_details.get("billCycleEndDate")
 

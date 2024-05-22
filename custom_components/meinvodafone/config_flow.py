@@ -22,9 +22,13 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = vol.Schema(
     {
-        vol.Required("username"): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT, autocomplete="username")),
+        vol.Required("username"): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT, autocomplete="username")
+        ),
         vol.Required("password"): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD, autocomplete="current-password")
+            TextSelectorConfig(
+                type=TextSelectorType.PASSWORD, autocomplete="current-password"
+            )
         ),
     }
 )
@@ -82,7 +86,9 @@ class MeinVodafoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("Error during login: %s", str(e))
                 errors["base"] = "login_failed"
 
-        return self.async_show_form(step_id="user", data_schema=CONFIG_SCHEMA, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=CONFIG_SCHEMA, errors=errors
+        )
 
     async def async_step_select_contract(self, user_input=None):
         """Handle contract id selection step."""
@@ -118,7 +124,9 @@ class MeinVodafoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reauth(self, user_input=None) -> dict:
         """Perform reauth upon an API authentication error."""
-        self.reauth_entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        self.reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(self, user_input=None) -> dict:
@@ -145,7 +153,11 @@ class MeinVodafoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_PASSWORD: user_input[CONF_PASSWORD],
                         },
                     )
-                    self.hass.async_create_task(self.hass.config_entries.async_reload(self.reauth_entry.entry_id))
+                    self.hass.async_create_task(
+                        self.hass.config_entries.async_reload(
+                            self.reauth_entry.entry_id
+                        )
+                    )
 
                     return self.async_abort(reason="reauth_successful")
                 errors["base"] = "login_failed"
@@ -158,7 +170,9 @@ class MeinVodafoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="reauth_confirm",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_USERNAME, default=self.reauth_entry.data[CONF_USERNAME]): str,
+                    vol.Required(
+                        CONF_USERNAME, default=self.reauth_entry.data[CONF_USERNAME]
+                    ): str,
                     vol.Required(CONF_PASSWORD): str,
                 }
             ),

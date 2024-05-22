@@ -51,7 +51,7 @@ class MeinVodafoneContract:
 
         if key == NAME:
             # Combine all names with a comma
-            return "\n".join(
+            return ", ".join(
                 [item.get(key, "") for item in container_data if item.get(key)]
             )
         if key == LAST_UPDATE:

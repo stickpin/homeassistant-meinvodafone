@@ -42,394 +42,223 @@ class MeinVodafoneContract:
 
         self.usage_data = usage_data
 
-    def get_value(self, container: str, key: str, index: int | None = None) -> str | None:
-        """Return value if found in the usage data."""
-        container_data = self.usage_data.get(container, None)
-        if index is not None and container_data and 0 <= index < len(container_data):
-            return container_data[index].get(key)
-        return container_data.get(key, None)
+    def get_value(self, container: str, key: str | None = None) -> str | None:
+        """Return summarized value for the usage data."""
+        container_data = self.usage_data.get(container, [])
+
+        if not container_data:
+            return None
+
+        if key == NAME:
+            # Combine all names with a comma
+            return "\n".join(
+                [item.get(key, "") for item in container_data if item.get(key)]
+            )
+        if key == LAST_UPDATE:
+            # Return the latest last_update timestamp
+            return max(item.get(key) for item in container_data if item.get(key))
+        # Summarize numerical values
+        total_value = sum(
+            int(item.get(key, 0))
+            for item in container_data
+            if item.get(key) is not None
+        )
+        return str(total_value)
+
+    def get_billing_value(self, key: str) -> str | None:
+        """Return value from the billing information."""
+        billing_data = self.usage_data.get(BILLING, {})
+        return billing_data.get(key, None)
 
     #
-    # MINUTES - Primary plan
+    # MINUTES
     #
 
-    # Minutes - Primary plan - Name
+    # Minutes - Plan name
     @property
-    def primary_minutes_name(self):
+    def minutes_name(self):
+        """Return name of the plan."""
+        return self.get_value(MINUTES, NAME)
+
+    # Minutes - Remaining
+    @property
+    def minutes_remaining(self):
+        """Return remaining minutes for the plan."""
+        return self.get_value(MINUTES, REMAINING)
+
+    @property
+    def minutes_remaining_last_update(self):
+        """Return remaining minutes for the plan last update timestamp."""
+        return self.get_value(MINUTES, LAST_UPDATE)
+
+    @property
+    def is_minutes_remaining_supported(self):
+        """Return true if remaining minutes for the plan is supported."""
+        if self.get_value(MINUTES, REMAINING):
+            return True
+        return False
+
+    # Minutes - Used
+    @property
+    def minutes_used(self):
+        """Return used minutes for the plan."""
+        return self.get_value(MINUTES, USED)
+
+    @property
+    def minutes_used_last_update(self):
+        """Return used minutes for the plan last update timestamp."""
+        return self.get_value(MINUTES, LAST_UPDATE)
+
+    @property
+    def is_minutes_used_supported(self):
+        """Return true if used minutes for the plan is supported."""
+        if self.get_value(MINUTES, USED):
+            return True
+        return False
+
+    # Minutes - Total
+    @property
+    def minutes_total(self):
+        """Return total minutes for the plan."""
+        return self.get_value(MINUTES, TOTAL)
+
+    @property
+    def minutes_total_last_update(self):
+        """Return total minutes for the plan last update timestamp."""
+        return self.get_value(MINUTES, LAST_UPDATE)
+
+    @property
+    def is_minutes_total_supported(self):
+        """Return true if total minutes for the plan is supported."""
+        if self.get_value(MINUTES, TOTAL):
+            return True
+        return False
+
+    #
+    # SMS
+    #
+
+    # SMS - Plan name
+    @property
+    def sms_name(self):
         """Return name of the primary plan."""
-        return self.get_value(MINUTES, NAME, 0)
+        return self.get_value(SMS, NAME)
 
-    # Minutes - Primary plan - Remaining
+    # SMS - Remaining
     @property
-    def primary_minutes_remaining(self):
-        """Return remaining minutes for the primary plan."""
-        return self.get_value(MINUTES, REMAINING, 0)
-
-    @property
-    def primary_minutes_remaining_last_update(self):
-        """Return remaining minutes for the primary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 0)
+    def sms_remaining(self):
+        """Return remaining sms for the plan."""
+        return self.get_value(SMS, REMAINING)
 
     @property
-    def is_primary_minutes_remaining_supported(self):
-        """Return true if remaining minutes for the primary plan is supported."""
-        if self.get_value(MINUTES, REMAINING, 0):
+    def sms_remaining_last_update(self):
+        """Return remaining sms for the plan last update timestamp."""
+        return self.get_value(SMS, LAST_UPDATE)
+
+    @property
+    def is_sms_remaining_supported(self):
+        """Return true if remaining sms for the plan is supported."""
+        if self.get_value(SMS, REMAINING):
             return True
         return False
 
-    # Minutes - Primary plan - Used
+    # SMS - Used
     @property
-    def primary_minutes_used(self):
-        """Return used minutes for the primary plan."""
-        return self.get_value(MINUTES, USED, 0)
+    def sms_used(self):
+        """Return used sms for the plan."""
+        return self.get_value(SMS, USED)
 
     @property
-    def primary_minutes_used_last_update(self):
-        """Return used minutes for the primary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 0)
+    def sms_used_last_update(self):
+        """Return used sms for the plan last update timestamp."""
+        return self.get_value(SMS, LAST_UPDATE)
 
     @property
-    def is_primary_minutes_used_supported(self):
-        """Return true if used minutes for the primary plan is supported."""
-        if self.get_value(MINUTES, USED, 0):
+    def is_sms_used_supported(self):
+        """Return true if used sms for the plan is supported."""
+        if self.get_value(SMS, USED):
             return True
         return False
 
-    # Minutes - Primary plan - Total
+    # SMS - Total
     @property
-    def primary_minutes_total(self):
-        """Return total minutes for the primary plan."""
-        return self.get_value(MINUTES, TOTAL, 0)
+    def sms_total(self):
+        """Return total sms for the plan."""
+        return self.get_value(SMS, TOTAL)
 
     @property
-    def primary_minutes_total_last_update(self):
-        """Return total minutes for the primary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 0)
+    def sms_total_last_update(self):
+        """Return total sms for the plan last update timestamp."""
+        return self.get_value(SMS, LAST_UPDATE)
 
     @property
-    def is_primary_minutes_total_supported(self):
-        """Return true if total minutes for the primary plan is supported."""
-        if self.get_value(MINUTES, TOTAL, 0):
-            return True
-        return False
-
-    #
-    # MINUTES - Secondary plan
-    #
-
-    # Minutes - Secondary plan - Name
-    @property
-    def secondary_minutes_name(self):
-        """Return name of the secondary plan."""
-        return self.get_value(MINUTES, NAME, 1)
-
-    # Minutes - Secondary plan - Remaining
-    @property
-    def secondary_minutes_remaining(self):
-        """Return remaining minutes for the secondary plan."""
-        return self.get_value(MINUTES, REMAINING, 1)
-
-    @property
-    def secondary_minutes_remaining_last_update(self):
-        """Return remaining minutes for the secondary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_minutes_remaining_supported(self):
-        """Return true if remaining minutes for the secondary plan is supported."""
-        if self.get_value(MINUTES, REMAINING, 1):
-            return True
-        return False
-
-    # Minutes - Secondary contract - Used
-    @property
-    def secondary_minutes_used(self):
-        """Return used minutes for the secondary plan."""
-        return self.get_value(MINUTES, USED, 1)
-
-    @property
-    def secondary_minutes_used_last_update(self):
-        """Return used minutes for the secondary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_minutes_used_supported(self):
-        """Return true if used minutes for the secondary plan is supported."""
-        if self.get_value(MINUTES, USED, 1):
-            return True
-        return False
-
-    # Minutes - Secondary contract - Total
-    @property
-    def secondary_minutes_total(self):
-        """Return total minutes for the secondary plan."""
-        return self.get_value(MINUTES, TOTAL, 1)
-
-    @property
-    def secondary_minutes_total_last_update(self):
-        """Return total minutes for the secondary plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_minutes_total_supported(self):
-        """Return true if total minutes for the secondary plan is supported."""
-        if self.get_value(MINUTES, TOTAL, 1):
+    def is_sms_total_supported(self):
+        """Return true if total sms for the plan is supported."""
+        if self.get_value(SMS, TOTAL):
             return True
         return False
 
     #
-    # SMS - Primary plan
+    # DATA
     #
 
-    # SMS - Primary plan - Name
+    # DATA - Plan ame
     @property
-    def primary_sms_name(self):
-        """Return name of the primary plan."""
-        return self.get_value(SMS, NAME, 0)
+    def data_name(self):
+        """Return name of the plan."""
+        return self.get_value(DATA, NAME)
 
-    # SMS - Primary plan - Remaining
+    # DATA - Remaining
     @property
-    def primary_sms_remaining(self):
-        """Return remaining sms for the primary plan."""
-        return self.get_value(SMS, REMAINING, 0)
-
-    @property
-    def primary_sms_remaining_last_update(self):
-        """Return remaining sms for the primary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 0)
+    def data_remaining(self):
+        """Return remaining data for the plan."""
+        return self.get_value(DATA, REMAINING)
 
     @property
-    def is_primary_sms_remaining_supported(self):
-        """Return true if remaining sms for the primary plan is supported."""
-        if self.get_value(SMS, REMAINING, 0):
+    def data_remaining_last_update(self):
+        """Return remaining data for the plan last update timestamp."""
+        return self.get_value(DATA, LAST_UPDATE)
+
+    @property
+    def is_data_remaining_supported(self):
+        """Return true if remaining data for the plan is supported."""
+        if self.get_value(DATA, REMAINING):
             return True
         return False
 
-    # SMS - Primary plan - Used
+    # DATA - Used
     @property
-    def primary_sms_used(self):
-        """Return used sms for the primary plan."""
-        return self.get_value(SMS, USED, 0)
+    def data_used(self):
+        """Return used data for the plan."""
+        return self.get_value(DATA, USED)
 
     @property
-    def primary_sms_used_last_update(self):
-        """Return used sms for the primary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 0)
+    def data_used_last_update(self):
+        """Return used data for the plan last update timestamp."""
+        return self.get_value(DATA, LAST_UPDATE)
 
     @property
-    def is_primary_sms_used_supported(self):
-        """Return true if used sms for the primary plan is supported."""
-        if self.get_value(SMS, USED, 0):
+    def is_data_used_supported(self):
+        """Return true if used data for the plan is supported."""
+        if self.get_value(DATA, USED):
             return True
         return False
 
-    # SMS - Primary plan - Total
+    # DATA - Total
     @property
-    def primary_sms_total(self):
-        """Return total sms for the primary plan."""
-        return self.get_value(SMS, TOTAL, 0)
-
-    @property
-    def primary_sms_total_last_update(self):
-        """Return total sms for the primary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 0)
+    def data_total(self):
+        """Return total data for the plan."""
+        return self.get_value(DATA, TOTAL)
 
     @property
-    def is_primary_sms_total_supported(self):
-        """Return true if total sms for the primary plan is supported."""
-        if self.get_value(SMS, TOTAL, 0):
-            return True
-        return False
-
-    #
-    # SMS - Secondary plan
-    #
-
-    # SMS - Secondary plan - Name
-    @property
-    def secondary_sms_name(self):
-        """Return name of the secondary plan."""
-        return self.get_value(SMS, NAME, 1)
-
-    # SMS - Secondary plan - Remaining
-    @property
-    def secondary_sms_remaining(self):
-        """Return remaining sms for the secondary plan."""
-        return self.get_value(SMS, REMAINING, 1)
+    def data_total_last_update(self):
+        """Return total data for the plan last update timestamp."""
+        return self.get_value(DATA, LAST_UPDATE)
 
     @property
-    def secondary_sms_remaining_last_update(self):
-        """Return remaining sms for the secondary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_sms_remaining_supported(self):
-        """Return true if remaining sms for the secondary plan is supported."""
-        if self.get_value(SMS, REMAINING, 1):
-            return True
-        return False
-
-    # SMS - Secondary contract - Used
-    @property
-    def secondary_sms_used(self):
-        """Return used sms for the secondary plan."""
-        return self.get_value(SMS, USED, 1)
-
-    @property
-    def secondary_sms_used_last_update(self):
-        """Return used sms for the secondary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_sms_used_supported(self):
-        """Return true if used sms for the secondary plan is supported."""
-        if self.get_value(SMS, USED, 1):
-            return True
-        return False
-
-    # SMS - Secondary contract - Total
-    @property
-    def secondary_sms_total(self):
-        """Return total sms for the secondary plan."""
-        return self.get_value(SMS, TOTAL, 1)
-
-    @property
-    def secondary_sms_total_last_update(self):
-        """Return total sms for the secondary plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_sms_total_supported(self):
-        """Return true if total sms for the secondary plan is supported."""
-        if self.get_value(SMS, TOTAL, 1):
-            return True
-        return False
-
-    #
-    # DATA - Primary plan
-    #
-
-    # DATA - Primary plan - Name
-    @property
-    def primary_data_name(self):
-        """Return name of the primary plan."""
-        return self.get_value(DATA, NAME, 0)
-
-    # DATA - Primary plan - Remaining
-    @property
-    def primary_data_remaining(self):
-        """Return remaining data for the primary plan."""
-        return self.get_value(DATA, REMAINING, 0)
-
-    @property
-    def primary_data_remaining_last_update(self):
-        """Return remaining data for the primary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 0)
-
-    @property
-    def is_primary_data_remaining_supported(self):
-        """Return true if remaining data for the primary plan is supported."""
-        if self.get_value(DATA, REMAINING, 0):
-            return True
-        return False
-
-    # DATA - Primary plan - Used
-    @property
-    def primary_data_used(self):
-        """Return used data for the primary plan."""
-        return self.get_value(DATA, USED, 0)
-
-    @property
-    def primary_data_used_last_update(self):
-        """Return used data for the primary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 0)
-
-    @property
-    def is_primary_data_used_supported(self):
-        """Return true if used data for the primary plan is supported."""
-        if self.get_value(DATA, USED, 0):
-            return True
-        return False
-
-    # DATA - Primary plan - Total
-    @property
-    def primary_data_total(self):
-        """Return total data for the primary plan."""
-        return self.get_value(DATA, TOTAL, 0)
-
-    @property
-    def primary_data_total_last_update(self):
-        """Return total data for the primary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 0)
-
-    @property
-    def is_primary_data_total_supported(self):
-        """Return true if total data for the primary plan is supported."""
-        if self.get_value(DATA, TOTAL, 0):
-            return True
-        return False
-
-    #
-    # DATA - Secondary plan
-    #
-
-    # DATA - Secondary plan - Name
-    @property
-    def secondary_data_name(self):
-        """Return name of the secondary plan."""
-        return self.get_value(DATA, NAME, 1)
-
-    # DATA - Secondary plan - Remaining
-    @property
-    def secondary_data_remaining(self):
-        """Return remaining data for the secondary plan."""
-        return self.get_value(DATA, REMAINING, 1)
-
-    @property
-    def secondary_data_remaining_last_update(self):
-        """Return remaining data for the secondary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_data_remaining_supported(self):
-        """Return true if remaining data for the secondary plan is supported."""
-        if self.get_value(DATA, REMAINING, 1):
-            return True
-        return False
-
-    # DATA - Secondary contract - Used
-    @property
-    def secondary_data_used(self):
-        """Return used data for the secondary plan."""
-        return self.get_value(DATA, USED, 1)
-
-    @property
-    def secondary_data_used_last_update(self):
-        """Return used data for the secondary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_data_used_supported(self):
-        """Return true if used data for the secondary plan is supported."""
-        if self.get_value(DATA, USED, 1):
-            return True
-        return False
-
-    # DATA - Secondary contract - Total
-    @property
-    def secondary_data_total(self):
-        """Return total data for the secondary plan."""
-        return self.get_value(DATA, TOTAL, 1)
-
-    @property
-    def secondary_data_total_last_update(self):
-        """Return total data for the secondary plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE, 1)
-
-    @property
-    def is_secondary_data_total_supported(self):
-        """Return true if total data for the secondary plan is supported."""
-        if self.get_value(DATA, TOTAL, 1):
+    def is_data_total_supported(self):
+        """Return true if total data for the plan is supported."""
+        if self.get_value(DATA, TOTAL):
             return True
         return False
 
@@ -441,7 +270,7 @@ class MeinVodafoneContract:
     @property
     def billing_current_summary(self):
         """Return current billing summary."""
-        return self.get_value(BILLING, CURRENT_SUMMARY)
+        return self.get_billing_value(CURRENT_SUMMARY)
 
     @property
     def billing_current_summary_last_update(self):
@@ -451,7 +280,7 @@ class MeinVodafoneContract:
     @property
     def is_billing_current_summary_supported(self):
         """Return true if current billing summary is supported."""
-        if self.get_value(BILLING, CURRENT_SUMMARY):
+        if self.get_billing_value(CURRENT_SUMMARY):
             return True
         return False
 
@@ -459,7 +288,7 @@ class MeinVodafoneContract:
     @property
     def billing_last_summary(self):
         """Return last billing summary."""
-        return self.get_value(BILLING, LAST_SUMMARY)
+        return self.get_billing_value(LAST_SUMMARY)
 
     @property
     def billing_last_summary_last_update(self):
@@ -469,7 +298,7 @@ class MeinVodafoneContract:
     @property
     def is_billing_last_summary_supported(self):
         """Return true if last billing summary is supported."""
-        if self.get_value(BILLING, LAST_SUMMARY):
+        if self.get_billing_value(LAST_SUMMARY):
             return True
         return False
 
@@ -478,9 +307,13 @@ class MeinVodafoneContract:
     def billing_cycle_days(self):
         """Return days until end of the billing cycle."""
         datetime_now = (
-            datetime.datetime.now(datetime.UTC).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0)
+            datetime.datetime.now(datetime.UTC)
+            .replace(tzinfo=None)
+            .replace(hour=0, minute=0, second=0, microsecond=0)
         )
-        cycle_end = datetime.datetime.strptime(self.billing_cycle_end, "%Y-%m-%d").replace(tzinfo=None)
+        cycle_end = datetime.datetime.strptime(
+            self.billing_cycle_end, "%Y-%m-%d"
+        ).replace(tzinfo=None)
         delta = cycle_end - datetime_now
 
         return delta.days
@@ -501,10 +334,10 @@ class MeinVodafoneContract:
     @property
     def billing_cycle_start(self):
         """Return billing cycle start date."""
-        return self.get_value(BILLING, CYCLE_START)
+        return self.get_billing_value(CYCLE_START)
 
     # BILLING - Cycle End Date
     @property
     def billing_cycle_end(self):
         """Return billing cycle end date."""
-        return self.get_value(BILLING, CYCLE_END)
+        return self.get_billing_value(CYCLE_END)

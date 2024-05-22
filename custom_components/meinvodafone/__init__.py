@@ -46,7 +46,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     }
 
     for platform in PLATFORMS:
-        hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, platform))
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(config_entry, platform)
+        )
 
     return True
 
@@ -72,7 +74,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class MeinVodafoneCoordinator(DataUpdateCoordinator):
     """Class to manage fetching mail data."""
 
-    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, update_interval: timedelta) -> None:
+    def __init__(
+        self, hass: HomeAssistant, config_entry: ConfigEntry, update_interval: timedelta
+    ) -> None:
         """Initialize."""
         self.hass = hass
         self.config_entry = config_entry
@@ -86,7 +90,9 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
             config_entry.data.get(CONF_PASSWORD),
         )
 
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=self.update_interval)
+        super().__init__(
+            hass, _LOGGER, name=DOMAIN, update_interval=self.update_interval
+        )
 
     async def _async_update_data(self):
         """Fetch data."""
@@ -97,7 +103,9 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
                 logged_in = await self.api.login()
                 if logged_in:
                     return await self.update()
-                raise ConfigEntryAuthFailed(f"Credentials expired for {self.contract_id}")
+                raise ConfigEntryAuthFailed(
+                    f"Credentials expired for {self.contract_id}"
+                )
             return await self.update()
 
     async def update(self) -> MeinVodafoneContract | None:

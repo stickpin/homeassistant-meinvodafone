@@ -12,26 +12,17 @@ on:
       - "main"
 
 jobs:
-  validate-black:
-    name: "black validation"
+  validate-ruff:
+    name: With Ruff
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Check ruff
+        uses: chartboost/ruff-action@v1
         with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install black
-
-      - name: Check lint
-        run: |
-          black --check --diff --color --line-length=120 .
+          args: 'format --diff'
 
   hassfest: # https://developers.home-assistant.io/blog/2020/04/16/hassfest
     name: "Hassfest Validation"

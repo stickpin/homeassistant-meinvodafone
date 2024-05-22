@@ -1,6 +1,6 @@
 ![Version](https://img.shields.io/github/v/release/stickpin/homeassistant-meinvodafone)
 ![Downloads](https://img.shields.io/github/downloads/stickpin/homeassistant-meinvodafone/total)
-![CodeStyle](https://img.shields.io/badge/code%20style-black-black)
+![CodeStyle](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
 [![CodeQL](https://github.com/stickpin/homeassistant-meinvodafone/actions/workflows/codeql.yml/badge.svg)](https://github.com/stickpin/homeassistant-meinvodafone/actions/workflows/codeql.yml)
 
 
@@ -61,7 +61,7 @@ Currently, integration is not part of the HACS, so you will have to add the repo
 - Minutes Used/Remaining/Total
 - SMS Used/Remaining/Total
 - Data Used/Remaining/Total
-- Support for multiple packages (Primary/Secondary)
+- Support for multiple plans.
 - Billing Summary Current/Previous.
 - Billing Cycle (days left)
 

@@ -89,7 +89,9 @@ class MeinVodafoneContract:
     @property
     def minutes_remaining_last_update(self):
         """Return remaining minutes for the plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(MINUTES, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_minutes_remaining_supported(self):
@@ -107,7 +109,9 @@ class MeinVodafoneContract:
     @property
     def minutes_used_last_update(self):
         """Return used minutes for the plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(MINUTES, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_minutes_used_supported(self):
@@ -125,7 +129,9 @@ class MeinVodafoneContract:
     @property
     def minutes_total_last_update(self):
         """Return total minutes for the plan last update timestamp."""
-        return self.get_value(MINUTES, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(MINUTES, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_minutes_total_supported(self):
@@ -153,7 +159,9 @@ class MeinVodafoneContract:
     @property
     def sms_remaining_last_update(self):
         """Return remaining sms for the plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(SMS, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_sms_remaining_supported(self):
@@ -171,7 +179,9 @@ class MeinVodafoneContract:
     @property
     def sms_used_last_update(self):
         """Return used sms for the plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(SMS, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_sms_used_supported(self):
@@ -189,7 +199,9 @@ class MeinVodafoneContract:
     @property
     def sms_total_last_update(self):
         """Return total sms for the plan last update timestamp."""
-        return self.get_value(SMS, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(SMS, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_sms_total_supported(self):
@@ -217,7 +229,9 @@ class MeinVodafoneContract:
     @property
     def data_remaining_last_update(self):
         """Return remaining data for the plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(DATA, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_data_remaining_supported(self):
@@ -235,7 +249,9 @@ class MeinVodafoneContract:
     @property
     def data_used_last_update(self):
         """Return used data for the plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(DATA, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_data_used_supported(self):
@@ -253,7 +269,9 @@ class MeinVodafoneContract:
     @property
     def data_total_last_update(self):
         """Return total data for the plan last update timestamp."""
-        return self.get_value(DATA, LAST_UPDATE)
+        return datetime.datetime.strptime(
+            self.get_value(DATA, LAST_UPDATE), "%Y-%m-%dT%H:%M:%S"
+        ).replace(tzinfo=datetime.UTC)
 
     @property
     def is_data_total_supported(self):
@@ -306,14 +324,12 @@ class MeinVodafoneContract:
     @property
     def billing_cycle_days(self):
         """Return days until end of the billing cycle."""
-        datetime_now = (
-            datetime.datetime.now(datetime.UTC)
-            .replace(tzinfo=None)
-            .replace(hour=0, minute=0, second=0, microsecond=0)
+        datetime_now = datetime.datetime.now(datetime.UTC).replace(
+            hour=0, minute=0, second=0, microsecond=0
         )
         cycle_end = datetime.datetime.strptime(
             self.billing_cycle_end, "%Y-%m-%d"
-        ).replace(tzinfo=None)
+        ).replace(tzinfo=datetime.UTC)
         delta = cycle_end - datetime_now
 
         return delta.days

@@ -55,8 +55,14 @@ class MeinVodafoneContract:
                 [item.get(key, "") for item in container_data if item.get(key)]
             )
         if key == LAST_UPDATE:
-            # Return the latest last_update timestamp
-            return max(item.get(key) for item in container_data if item.get(key))
+            # Filter out None values and get the latest last_update timestamp
+            valid_updates = [
+                item.get(key) for item in container_data if item.get(key) is not None
+            ]
+            if not valid_updates:
+                # Return the current datetime if no valid updates are found
+                return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+            return max(valid_updates)
         # Summarize numerical values
         total_value = sum(
             int(item.get(key, 0))

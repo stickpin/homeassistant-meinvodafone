@@ -39,7 +39,7 @@ async def async_setup_entry(
                 device_class=entity.device_class,
                 plan_name=entity.plan_name,
                 value=getattr(coordinator.contract, entity.attr),
-                state_class=SensorStateClass.MEASUREMENT,
+                state_class=entity.state_class,
                 display_precision=entity.display_precision,
             )
             for entity in (

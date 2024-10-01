@@ -100,7 +100,7 @@ class MeinVodafoneAPI:
             }
 
             async with self.session.get(
-                url, headers=headers, allow_redirects=False
+                url, headers=headers, allow_redirects=False, timeout=60
             ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
@@ -158,7 +158,7 @@ class MeinVodafoneAPI:
             }
 
             async with self.session.get(
-                url, headers=headers, allow_redirects=False
+                url, headers=headers, allow_redirects=False, timeout=60
             ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)

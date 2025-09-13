@@ -312,6 +312,9 @@ class MeinVodafoneContract:
     @property
     def billing_cycle_days(self):
         """Return days until end of the billing cycle."""
+        if not self.billing_cycle_end:
+            return None
+
         datetime_now = datetime.datetime.now(datetime.UTC).replace(
             hour=0, minute=0, second=0, microsecond=0
         )

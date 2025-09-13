@@ -209,7 +209,9 @@ class MeinVodafoneAPI:
 
                                     data = {
                                         NAME: aggregation.get("name"),
-                                        REMAINING: aggregation.get("aggregateRemaining"),
+                                        REMAINING: aggregation.get(
+                                            "aggregateRemaining"
+                                        ),
                                         USED: aggregation.get("aggregateUsed"),
                                         TOTAL: aggregation.get("aggregateTotal"),
                                         LAST_UPDATE: last_update_time,

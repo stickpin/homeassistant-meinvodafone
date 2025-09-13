@@ -200,12 +200,19 @@ class MeinVodafoneAPI:
                             if container_name:
                                 aggregation = usage_data.get("vluxgateAgg")
                                 if aggregation:
+                                    last_update_time = None
+                                    usage_details = usage_data.get("usage", [])
+                                    if usage_details:
+                                        last_update_time = usage_details[0].get(
+                                            "lastUpdateDate"
+                                        )
+
                                     data = {
                                         NAME: aggregation.get("name"),
                                         REMAINING: aggregation.get("aggregateRemaining"),
                                         USED: aggregation.get("aggregateUsed"),
                                         TOTAL: aggregation.get("aggregateTotal"),
-                                        LAST_UPDATE: None,
+                                        LAST_UPDATE: last_update_time,
                                     }
                                     contract_usage_data[container_name].append(data)
                                 else:

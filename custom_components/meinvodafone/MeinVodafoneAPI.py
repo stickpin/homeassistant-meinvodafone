@@ -155,6 +155,9 @@ class MeinVodafoneAPI:
                 "minuten": MINUTES,
                 "sms": SMS,
                 "daten": DATA,
+                "d_eu_data": DATA,
+                "d_eu_flat_allnet_units": MINUTES,
+                "d_int_units": SMS,
             }
 
             async with self.session.get(
@@ -167,41 +170,64 @@ class MeinVodafoneAPI:
                     response_data = await response.json()
                     _LOGGER.debug("Response: %s", response_data)
                     service_usage_vbo = response_data.get("serviceUsageVBO", {})
-                    billing_details = service_usage_vbo.get("billDetails", {})
+                    billing_details = service_usage_vbo.get("billDetails")
 
-                    billing_currect_summary = billing_details.get(
-                        "currentSummary", {}
-                    ).get("amount")
-                    billing_last_summary = billing_details.get("lastSummary", {}).get(
-                        "amount"
-                    )
-                    billing_cycle_start = billing_details.get("billCycleStartDate")
-                    billing_cycle_end = billing_details.get("billCycleEndDate")
+                    if billing_details:
+                        billing_currect_summary = billing_details.get(
+                            "currentSummary", {}
+                        ).get("amount")
+                        billing_last_summary = billing_details.get(
+                            "lastSummary", {}
+                        ).get("amount")
+                        billing_cycle_start = billing_details.get("billCycleStartDate")
+                        billing_cycle_end = billing_details.get("billCycleEndDate")
 
-                    contract_usage_data[BILLING] = {
-                        CURRENT_SUMMARY: billing_currect_summary,
-                        LAST_SUMMARY: billing_last_summary,
-                        CYCLE_START: billing_cycle_start,
-                        CYCLE_END: billing_cycle_end,
-                    }
+                        contract_usage_data[BILLING] = {
+                            CURRENT_SUMMARY: billing_currect_summary,
+                            LAST_SUMMARY: billing_last_summary,
+                            CYCLE_START: billing_cycle_start,
+                            CYCLE_END: billing_cycle_end,
+                        }
+                    else:
+                        _LOGGER.debug("No billing details found, skipping.")
 
                     usage_accounts = service_usage_vbo.get("usageAccounts", [])
                     for account in usage_accounts:
                         usage_group = account.get("usageGroup", [])
                         for usage_data in usage_group:
                             container = usage_data.get("container", "")
-                            if container in {"SMS", "Minuten", "Daten"}:
-                                usage_details = usage_data.get("usage", [])
-                                for usage_item in usage_details:
+                            container_name = name_mapping.get(container.lower())
+                            if container_name:
+                                aggregation = usage_data.get("vluxgateAgg")
+                                if aggregation:
+                                    last_update_time = None
+                                    usage_details = usage_data.get("usage", [])
+                                    if usage_details:
+                                        last_update_time = usage_details[0].get(
+                                            "lastUpdateDate"
+                                        )
+
                                     data = {
-                                        NAME: usage_item.get("name"),
-                                        REMAINING: usage_item.get("remaining"),
-                                        USED: usage_item.get("used"),
-                                        TOTAL: usage_item.get("total"),
-                                        LAST_UPDATE: usage_item.get("lastUpdateDate"),
+                                        NAME: aggregation.get("name"),
+                                        REMAINING: aggregation.get("aggregateRemaining"),
+                                        USED: aggregation.get("aggregateUsed"),
+                                        TOTAL: aggregation.get("aggregateTotal"),
+                                        LAST_UPDATE: last_update_time,
                                     }
-                                    container_name = name_mapping.get(container.lower())
                                     contract_usage_data[container_name].append(data)
+                                else:
+                                    usage_details = usage_data.get("usage", [])
+                                    for usage_item in usage_details:
+                                        data = {
+                                            NAME: usage_item.get("name"),
+                                            REMAINING: usage_item.get("remaining"),
+                                            USED: usage_item.get("used"),
+                                            TOTAL: usage_item.get("total"),
+                                            LAST_UPDATE: usage_item.get(
+                                                "lastUpdateDate"
+                                            ),
+                                        }
+                                        contract_usage_data[container_name].append(data)
                 else:
                     if response.status == 401:
                         _LOGGER.debug("User appears unauthorized")

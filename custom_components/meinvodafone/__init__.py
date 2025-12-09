@@ -125,8 +125,6 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
         """Update usage data from MeinVodafone."""
         self.usage_data = usage_data
         self.contract = MeinVodafoneContract(
-            hass=self.hass,
-            config_entry=self.config_entry,
             contract_id=self.contract_id,
             usage_data=self.usage_data,
         )

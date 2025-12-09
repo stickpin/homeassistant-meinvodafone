@@ -7,16 +7,31 @@
           "password": "[%key:common::config_flow::data::password%]"
         },
         "description": "Fill in MeinVodafone information"
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
+      },
+      "select_contract": {
         "data": {
-          "entity_id": "[%key:component::NEW_DOMAIN::config::step::user::description%]"
-        }
+          "contract_id": "Contract"
+        },
+        "description": "Select your Vodafone contract"
+      },
+      "reauth_confirm": {
+        "data": {
+          "username": "[%key:common::config_flow::data::username%]",
+          "password": "[%key:common::config_flow::data::password%]"
+        },
+        "description": "Re-authenticate your MeinVodafone account"
       }
+    },
+    "error": {
+      "invalid_credentials": "Username or password cannot be empty",
+      "login_failed": "Invalid username or password",
+      "no_contracts": "No contracts found for this account",
+      "timeout": "Connection timeout. Please try again",
+      "unknown_error": "An unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This contract is already configured",
+      "reauth_successful": "Re-authentication successful"
     }
   }
 }

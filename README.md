@@ -13,7 +13,9 @@ This project enables the monitoring of your Vodafone DE mobile phone contract's 
 
 I hope this integration will be helpful for you as well.
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/A0A2S3YXY)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/stickpin)
+
+[![buy me a coffee](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/stickpin)
 
 ---
 

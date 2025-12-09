@@ -10,7 +10,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     CONTRACT_ID,
@@ -18,6 +18,7 @@ from .const import (
     DATA_LISTENER,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
+    REQUEST_TIMEOUT,
 )
 from .MeinVodafoneAPI import MeinVodafoneAPI
 from .MeinVodafoneContract import MeinVodafoneContract
@@ -55,69 +56,81 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         entry_data = hass.data[DOMAIN].pop(entry.entry_id)
 
+        # Clean up API session
+        coordinator = entry_data.get(COORDINATOR)
+        if coordinator and coordinator.api:
+            await coordinator.api.session.close()
+
         if DATA_LISTENER in entry_data:
             entry_data[DATA_LISTENER]()
-
-        # hass.data[DOMAIN][entry.entry_id][MEINVODAFONE_API] = None
-        # hass.data[DOMAIN][entry.entry_id][CONTRACT] = None
-        # hass.data[DOMAIN][entry.entry_id][CONTRACT_USAGE] = None
-
-        if entry.entry_id in hass.data[DOMAIN]:
-            hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
 
 
 class MeinVodafoneCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching mail data."""
+    """Class to manage fetching MeinVodafone data."""
 
     def __init__(
         self, hass: HomeAssistant, config_entry: ConfigEntry, update_interval: timedelta
     ) -> None:
         """Initialize."""
-        self.hass = hass
         self.config_entry = config_entry
         self.contract_id = config_entry.data.get(CONTRACT_ID)
-        self.contract = None
-        self.usage_data = {}
-        self.entities_list = None
+        self.contract: MeinVodafoneContract | None = None
+        self.usage_data: dict = {}
+        self.entities_list: list = []
         self.update_interval = update_interval
-        self.api = MeinVodafoneAPI(
-            config_entry.data.get(CONF_USERNAME),
-            config_entry.data.get(CONF_PASSWORD),
-        )
+
+        username = config_entry.data.get(CONF_USERNAME)
+        password = config_entry.data.get(CONF_PASSWORD)
+
+        if not username or not password:
+            raise ValueError("Username and password are required")
+
+        self.api = MeinVodafoneAPI(username, password)
 
         super().__init__(
             hass, _LOGGER, name=DOMAIN, update_interval=self.update_interval
         )
 
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> MeinVodafoneContract | None:
         """Fetch data."""
+        _LOGGER.debug("Starting data update for contract %s", self.contract_id)
+        try:
+            async with asyncio.timeout(REQUEST_TIMEOUT):
+                data = await self.api.get_contract_usage(self.contract_id)
+                status_code = data.get("status_code")
 
-        async with asyncio.timeout(10):
-            data = await self.api.get_contract_usage(self.contract_id)
-            if data.get("status_code", None) != 200:
-                logged_in = await self.api.login()
-                if logged_in:
-                    return await self.update()
-                raise ConfigEntryAuthFailed(
-                    f"Credentials expired for {self.contract_id}"
-                )
-            return await self.update()
+                if status_code == 401:  # Unauthorized
+                    _LOGGER.debug("Session expired, attempting re-login")
+                    if await self.api.login():
+                        data = await self.api.get_contract_usage(self.contract_id)
+                        if data.get("status_code") == 200:
+                            return await self.update(data.get("usage_data", {}))
+                    raise ConfigEntryAuthFailed(
+                        f"Authentication failed for {self.contract_id}"
+                    )
+                elif status_code != 200:
+                    raise UpdateFailed(f"Failed to fetch data: status {status_code}")
 
-    async def update(self) -> MeinVodafoneContract | None:
+                return await self.update(data.get("usage_data", {}))
+        except asyncio.TimeoutError as err:
+            raise UpdateFailed("Timeout fetching data") from err
+        except ConfigEntryAuthFailed:
+            raise  # Re-raise authentication errors without wrapping
+        except Exception as err:
+            raise UpdateFailed(f"Error fetching data: {err}") from err
+
+    async def update(self, usage_data: dict) -> MeinVodafoneContract | None:
         """Update usage data from MeinVodafone."""
-
-        data = await self.api.get_contract_usage(self.contract_id)
-
-        self.usage_data = data.get("usage_data", {})
+        self.usage_data = usage_data
         self.contract = MeinVodafoneContract(
             hass=self.hass,
             config_entry=self.config_entry,
             contract_id=self.contract_id,
             usage_data=self.usage_data,
         )
-        if self.entities_list is None:
+        if not self.entities_list:
             self.entities_list = MeinVodafoneEntities(self.contract).entities_list
         _LOGGER.debug(
             "Update is completed for %s. Next update in %s",

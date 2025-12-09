@@ -4,6 +4,7 @@ import logging
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.components.sensor.const import UnitOfInformation, UnitOfTime
+from homeassistant.const import CURRENCY_EURO
 from homeassistant.helpers.entity import EntityCategory
 
 from .MeinVodafoneContract import MeinVodafoneContract
@@ -14,11 +15,9 @@ _LOGGER = logging.getLogger(__name__)
 class BaseEntity:
     """Base class for all components."""
 
-    contract: MeinVodafoneContract
-
     def __init__(
         self,
-        component,
+        component: str,
         attr: str,
         name: str,
         icon: str | None = None,
@@ -38,6 +37,7 @@ class BaseEntity:
         self.device_class = device_class
         self.state_class = state_class
         self.display_precision = display_precision
+        self.contract: MeinVodafoneContract | None = None
 
     def setup(self, contract: MeinVodafoneContract) -> bool:
         """Set up entity if supported."""
@@ -52,9 +52,12 @@ class BaseEntity:
     @property
     def is_supported(self) -> bool:
         """Check entity is supported."""
-        supported = "is_" + self.attr + "_supported"
-        if hasattr(self.contract, supported):
-            return getattr(self.contract, supported)
+        if not self.contract:
+            return False
+
+        supported_attr = f"is_{self.attr}_supported"
+        if hasattr(self.contract, supported_attr):
+            return getattr(self.contract, supported_attr)
         return False
 
 
@@ -88,9 +91,10 @@ class Sensor(BaseEntity):
         self.unit = unit
 
 
-def create_entities():
+def create_entities() -> list[Sensor]:
     """Return list of all entities."""
     return [
+        # Minutes sensors
         Sensor(
             attr="minutes_remaining",
             name="Minutes remaining",
@@ -118,6 +122,7 @@ def create_entities():
             state_class=SensorStateClass.MEASUREMENT,
             display_precision=0,
         ),
+        # SMS sensors
         Sensor(
             attr="sms_remaining",
             name="SMS remaining",
@@ -142,6 +147,7 @@ def create_entities():
             plan_name="sms_name",
             state_class=SensorStateClass.MEASUREMENT,
         ),
+        # Data sensors
         Sensor(
             attr="data_remaining",
             name="Data remaining",
@@ -169,18 +175,19 @@ def create_entities():
             plan_name="data_name",
             state_class=SensorStateClass.MEASUREMENT,
         ),
+        # Billing sensors
         Sensor(
             attr="billing_current_summary",
-            name="Billing currect summary",
+            name="Billing current summary",
             icon="mdi:credit-card-search",
-            unit="€",
+            unit=CURRENCY_EURO,
             state_class=SensorStateClass.MEASUREMENT,
         ),
         Sensor(
             attr="billing_last_summary",
             name="Billing last summary",
             icon="mdi:credit-card-clock",
-            unit="€",
+            unit=CURRENCY_EURO,
             state_class=SensorStateClass.MEASUREMENT,
         ),
         Sensor(
@@ -197,8 +204,10 @@ def create_entities():
 class MeinVodafoneEntities:
     """Class for accessing the entities."""
 
-    def __init__(self, contract) -> None:
+    def __init__(self, contract: MeinVodafoneContract) -> None:
         """Initialize instruments."""
-        self.entities_list = [
-            entity for entity in create_entities() if entity.setup(contract)
-        ]
+        self.entities_list: list[Sensor] = []
+
+        for entity in create_entities():
+            if entity.setup(contract):
+                self.entities_list.append(entity)

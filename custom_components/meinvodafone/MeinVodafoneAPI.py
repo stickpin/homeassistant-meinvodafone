@@ -2,8 +2,9 @@
 
 import logging
 import time
+from typing import Any
 
-from aiohttp import ClientSession
+from aiohttp import ClientError, ClientSession
 
 from .const import (
     API_HOST,
@@ -28,6 +29,8 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+API_TIMEOUT = 60  # seconds
+
 
 class MeinVodafoneAPI:
     """Main MeinVodafone API class to MeinVodafone services."""
@@ -36,10 +39,12 @@ class MeinVodafoneAPI:
         """Init MeinVodafone API class."""
         self.username = username
         self.password = password
-        self.contracts = {}
-        self.random_string = ""
-        self.code = ""
         self.session = ClientSession()
+
+    async def close(self) -> None:
+        """Close the API session."""
+        if self.session:
+            await self.session.close()
 
     async def login(self) -> bool:
         """Start session API."""
@@ -53,44 +58,48 @@ class MeinVodafoneAPI:
                 "conversation": "",
                 "targetURL": "",
             }
-            url = MINT_HOST + "/rest/v60/session/start"
+            url = f"{MINT_HOST}/rest/v60/session/start"
             headers = {
                 "User-Agent": USER_AGENT,
             }
 
             async with self.session.post(
-                url, headers=headers, json=payload
+                url, headers=headers, json=payload, timeout=API_TIMEOUT
             ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
+
                 if response.status == 200:
                     response_data = await response.json()
                     _LOGGER.debug("Response: %s", response_data)
-                    if response_data.get("userId", None):
+                    if response_data.get("userId"):
                         return True
                 else:
-                    response_data = await response.text()
+                    response_text = await response.text()
                     _LOGGER.error("Failed to login")
                     _LOGGER.debug(
                         "Not success status code [%s] response: %s",
                         response.status,
-                        response_data,
+                        response_text,
                     )
                 return False
+        except ClientError as error:
+            _LOGGER.error("Network error during login: %s", error)
+            return False
         except Exception as error:
-            _LOGGER.error("Error during the login proccess, error %s", error)
+            _LOGGER.error("Error during the login process: %s", error)
             return False
 
-    async def get_contracts(self) -> list:
+    async def get_contracts(self) -> list[str]:
         """Get contracts API."""
         _LOGGER.debug("Getting contracts")
 
-        contracts = []
-        timestamp = "%d" % (time.time())
+        contracts: list[str] = []
+        timestamp = f"{int(time.time())}"
 
         try:
-            url = API_HOST + "/vluxgate/vlux/hashing"
+            url = f"{API_HOST}/vluxgate/vlux/hashing"
 
             headers = {
                 "Referer": HEADER_REFERER,
@@ -100,39 +109,50 @@ class MeinVodafoneAPI:
             }
 
             async with self.session.get(
-                url, headers=headers, allow_redirects=False, timeout=60
+                url, headers=headers, allow_redirects=False, timeout=API_TIMEOUT
             ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
+
                 if response.status == 200:
                     response_data = await response.json()
                     _LOGGER.debug("Response: %s", response_data)
-                    contracts_data = response_data.get("hashedIds", None)
+                    contracts_data = response_data.get("hashedIds")
+
                     if contracts_data:
                         for contract in contracts_data:
-                            if contract.get("type", None) == "mobile":
-                                contract_number = contract.get("id", None)
+                            if contract.get("type") == "mobile":
+                                contract_number = contract.get("id")
                                 if contract_number:
                                     contracts.append(contract_number)
                 else:
+                    response_text = await response.text()
                     _LOGGER.error("Failed to retrieve contracts")
                     _LOGGER.debug(
                         "Not success status code [%s] response: %s",
                         response.status,
-                        response.text,
+                        response_text,
                     )
+        except ClientError as error:
+            _LOGGER.error("Network error during contract retrieval: %s", error)
         except Exception as error:
-            _LOGGER.error(
-                "Error during the contracts retrieval proccess, error %s", error
-            )
+            _LOGGER.error("Error during the contract retrieval process: %s", error)
+
         return contracts
 
-    async def get_contract_usage(self, contract_number) -> dict:
+    async def get_contract_usage(self, contract_number: str) -> dict[str, Any]:
         """Get usage data API."""
-        _LOGGER.debug("Getting contract usage details")
+        if not contract_number:
+            _LOGGER.error("Contract number is required")
+            return {
+                "status_code": None,
+                "error_message": "Contract number is required",
+            }
 
-        contract_usage_data = {
+        _LOGGER.debug("Getting contract usage details for %s", contract_number)
+
+        contract_usage_data: dict[str, Any] = {
             BILLING: {},
             MINUTES: [],
             SMS: [],
@@ -140,9 +160,8 @@ class MeinVodafoneAPI:
         }
 
         try:
-            url = API_HOST + f"/vluxgate/vlux/mobile/unbilledUsage/{contract_number}"
-
-            timestamp = "%d" % (time.time())
+            url = f"{API_HOST}/vluxgate/vlux/mobile/unbilledUsage/{contract_number}"
+            timestamp = f"{int(time.time())}"
 
             headers = {
                 "Referer": HEADER_REFERER,
@@ -161,19 +180,22 @@ class MeinVodafoneAPI:
             }
 
             async with self.session.get(
-                url, headers=headers, allow_redirects=False, timeout=60
+                url, headers=headers, allow_redirects=False, timeout=API_TIMEOUT
             ) as response:
                 _LOGGER.debug("Request URL: %s", url)
                 _LOGGER.debug("Request headers: %s", headers)
                 _LOGGER.debug("Response headers: %s", response.headers)
-                if response.status == 200:
+
+                status_code = response.status
+
+                if status_code == 200:
                     response_data = await response.json()
                     _LOGGER.debug("Response: %s", response_data)
                     service_usage_vbo = response_data.get("serviceUsageVBO", {})
                     billing_details = service_usage_vbo.get("billDetails")
 
                     if billing_details:
-                        billing_currect_summary = billing_details.get(
+                        billing_current_summary = billing_details.get(
                             "currentSummary", {}
                         ).get("amount")
                         billing_last_summary = billing_details.get(
@@ -183,7 +205,7 @@ class MeinVodafoneAPI:
                         billing_cycle_end = billing_details.get("billCycleEndDate")
 
                         contract_usage_data[BILLING] = {
-                            CURRENT_SUMMARY: billing_currect_summary,
+                            CURRENT_SUMMARY: billing_current_summary,
                             LAST_SUMMARY: billing_last_summary,
                             CYCLE_START: billing_cycle_start,
                             CYCLE_END: billing_cycle_end,
@@ -230,27 +252,38 @@ class MeinVodafoneAPI:
                                             ),
                                         }
                                         contract_usage_data[container_name].append(data)
+
+                    return {
+                        "status_code": status_code,
+                        "usage_data": contract_usage_data,
+                    }
                 else:
-                    if response.status == 401:
+                    response_text = await response.text()
+                    if status_code == 401:
                         _LOGGER.debug("User appears unauthorized")
                     else:
                         _LOGGER.error("Failed to retrieve contract usage details")
                     _LOGGER.debug(
                         "Not success status code [%s] response: %s",
-                        response.status,
-                        response.text,
+                        status_code,
+                        response_text,
                     )
                     return {
-                        "status_code": response.status,
-                        "error_message": response.text,
+                        "status_code": status_code,
+                        "error_message": response_text,
                     }
+        except ClientError as error:
+            _LOGGER.error("Network error during contract usage retrieval: %s", error)
+            return {
+                "status_code": None,
+                "error_message": str(error),
+            }
         except Exception as error:
             _LOGGER.error(
-                "Error during the contract usage details retrieval proccess, error %s",
+                "Error during the contract usage details retrieval process: %s",
                 error,
             )
             return {
                 "status_code": None,
-                "error_message": error,
+                "error_message": str(error),
             }
-        return {"status_code": response.status, "usage_data": contract_usage_data}

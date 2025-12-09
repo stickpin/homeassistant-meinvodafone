@@ -12,10 +12,11 @@
         "title": "Contract",
         "description": "The following contracts was found. Please select the contract you wish to monitor",
         "data": {
-          "contract": "Contract Number"
+          "contract_id": "Contract Number"
         }
       },
       "reauth_confirm": {
+        "title": "Re-authenticate",
         "data": {
           "username": "Username",
           "password": "Password"
@@ -28,7 +29,11 @@
       "reauth_successful": "Re-authentication was successful"
     },
     "error": {
-      "login_failed": "Unable not login to MeinVodafone, please check your credentials and verify that the service is working"
+      "invalid_credentials": "Username or password cannot be empty",
+      "login_failed": "Unable to login to MeinVodafone, please check your credentials and verify that the service is working",
+      "no_contracts": "No contracts found for this account",
+      "timeout": "Connection timeout. Please try again",
+      "unknown_error": "An unexpected error occurred"
     }
   }
 }

@@ -2,9 +2,7 @@
 
 import datetime
 import logging
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from typing import Any
 
 from .const import (
     BILLING,
@@ -24,23 +22,22 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Date format constants
+ISO_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+ISO_DATE_FORMAT = "%Y-%m-%d"
+
 
 class MeinVodafoneContract:
     """Init MeinVodafone contract class."""
 
     def __init__(
         self,
-        hass: HomeAssistant,
-        config_entry: ConfigEntry,
         contract_id: str,
-        usage_data: dict,
+        usage_data: dict[str, Any],
     ) -> None:
         """Initialize MeinVodafone contract."""
-        self.hass = hass
-        self.config_entry: ConfigEntry = config_entry
-        self.contract_id: contract_id
-
-        self.usage_data = usage_data
+        self.contract_id: str = contract_id
+        self.usage_data: dict[str, Any] = usage_data
 
     def get_value(self, container: str, key: str | None = None) -> str | None:
         """Return summarized value for the usage data."""
@@ -61,7 +58,9 @@ class MeinVodafoneContract:
             ]
             if not valid_updates:
                 # Return the current datetime if no valid updates are found
-                return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+                return datetime.datetime.now(datetime.timezone.utc).strftime(
+                    ISO_DATETIME_FORMAT
+                )
             return max(valid_updates)
         # Summarize numerical values
         total_value = sum(
@@ -74,277 +73,260 @@ class MeinVodafoneContract:
     def get_billing_value(self, key: str) -> str | None:
         """Return value from the billing information."""
         billing_data = self.usage_data.get(BILLING, {})
-        return billing_data.get(key, None)
+        return billing_data.get(key)
+
+    def _get_datetime_from_value(
+        self, container: str, key: str
+    ) -> datetime.datetime | None:
+        """Get datetime object from container value."""
+        value = self.get_value(container, key)
+        if value is None:
+            return None
+        try:
+            return datetime.datetime.fromisoformat(value)
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning(
+                "Failed to parse datetime from %s: %s - %s", container, value, err
+            )
+            return None
+
+    def _create_usage_properties(self, container: str, metric_name: str):
+        """Helper to reduce duplication (not directly implemented as Python lacks macros)."""
+        # This is a conceptual helper - actual implementation would require
+        # dynamic property generation or metaclass usage
+        pass
 
     #
     # MINUTES
     #
 
-    # Minutes - Plan name
     @property
-    def minutes_name(self):
+    def minutes_name(self) -> str | None:
         """Return name of the plan."""
         return self.get_value(MINUTES, NAME)
 
-    # Minutes - Remaining
     @property
-    def minutes_remaining(self):
+    def minutes_remaining(self) -> str | None:
         """Return remaining minutes for the plan."""
         return self.get_value(MINUTES, REMAINING)
 
     @property
-    def minutes_remaining_last_update(self):
+    def minutes_remaining_last_update(self) -> datetime.datetime | None:
         """Return remaining minutes for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(MINUTES, LAST_UPDATE))
+        return self._get_datetime_from_value(MINUTES, LAST_UPDATE)
 
     @property
-    def is_minutes_remaining_supported(self):
+    def is_minutes_remaining_supported(self) -> bool:
         """Return true if remaining minutes for the plan is supported."""
-        if self.get_value(MINUTES, REMAINING):
-            return True
-        return False
+        return bool(self.get_value(MINUTES, REMAINING))
 
-    # Minutes - Used
     @property
-    def minutes_used(self):
+    def minutes_used(self) -> str | None:
         """Return used minutes for the plan."""
         return self.get_value(MINUTES, USED)
 
     @property
-    def minutes_used_last_update(self):
+    def minutes_used_last_update(self) -> datetime.datetime | None:
         """Return used minutes for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(MINUTES, LAST_UPDATE))
+        return self._get_datetime_from_value(MINUTES, LAST_UPDATE)
 
     @property
-    def is_minutes_used_supported(self):
+    def is_minutes_used_supported(self) -> bool:
         """Return true if used minutes for the plan is supported."""
-        if self.get_value(MINUTES, USED):
-            return True
-        return False
+        return bool(self.get_value(MINUTES, USED))
 
-    # Minutes - Total
     @property
-    def minutes_total(self):
+    def minutes_total(self) -> str | None:
         """Return total minutes for the plan."""
         return self.get_value(MINUTES, TOTAL)
 
     @property
-    def minutes_total_last_update(self):
+    def minutes_total_last_update(self) -> datetime.datetime | None:
         """Return total minutes for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(MINUTES, LAST_UPDATE))
+        return self._get_datetime_from_value(MINUTES, LAST_UPDATE)
 
     @property
-    def is_minutes_total_supported(self):
+    def is_minutes_total_supported(self) -> bool:
         """Return true if total minutes for the plan is supported."""
-        if self.get_value(MINUTES, TOTAL):
-            return True
-        return False
+        return bool(self.get_value(MINUTES, TOTAL))
 
     #
     # SMS
     #
 
-    # SMS - Plan name
     @property
-    def sms_name(self):
+    def sms_name(self) -> str | None:
         """Return name of the primary plan."""
         return self.get_value(SMS, NAME)
 
-    # SMS - Remaining
     @property
-    def sms_remaining(self):
+    def sms_remaining(self) -> str | None:
         """Return remaining sms for the plan."""
         return self.get_value(SMS, REMAINING)
 
     @property
-    def sms_remaining_last_update(self):
+    def sms_remaining_last_update(self) -> datetime.datetime | None:
         """Return remaining sms for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(SMS, LAST_UPDATE))
+        return self._get_datetime_from_value(SMS, LAST_UPDATE)
 
     @property
-    def is_sms_remaining_supported(self):
+    def is_sms_remaining_supported(self) -> bool:
         """Return true if remaining sms for the plan is supported."""
-        if self.get_value(SMS, REMAINING):
-            return True
-        return False
+        return bool(self.get_value(SMS, REMAINING))
 
-    # SMS - Used
     @property
-    def sms_used(self):
+    def sms_used(self) -> str | None:
         """Return used sms for the plan."""
         return self.get_value(SMS, USED)
 
     @property
-    def sms_used_last_update(self):
+    def sms_used_last_update(self) -> datetime.datetime | None:
         """Return used sms for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(SMS, LAST_UPDATE))
+        return self._get_datetime_from_value(SMS, LAST_UPDATE)
 
     @property
-    def is_sms_used_supported(self):
+    def is_sms_used_supported(self) -> bool:
         """Return true if used sms for the plan is supported."""
-        if self.get_value(SMS, USED):
-            return True
-        return False
+        return bool(self.get_value(SMS, USED))
 
-    # SMS - Total
     @property
-    def sms_total(self):
+    def sms_total(self) -> str | None:
         """Return total sms for the plan."""
         return self.get_value(SMS, TOTAL)
 
     @property
-    def sms_total_last_update(self):
+    def sms_total_last_update(self) -> datetime.datetime | None:
         """Return total sms for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(SMS, LAST_UPDATE))
+        return self._get_datetime_from_value(SMS, LAST_UPDATE)
 
     @property
-    def is_sms_total_supported(self):
+    def is_sms_total_supported(self) -> bool:
         """Return true if total sms for the plan is supported."""
-        if self.get_value(SMS, TOTAL):
-            return True
-        return False
+        return bool(self.get_value(SMS, TOTAL))
 
     #
     # DATA
     #
 
-    # DATA - Plan ame
     @property
-    def data_name(self):
+    def data_name(self) -> str | None:
         """Return name of the plan."""
         return self.get_value(DATA, NAME)
 
-    # DATA - Remaining
     @property
-    def data_remaining(self):
+    def data_remaining(self) -> str | None:
         """Return remaining data for the plan."""
         return self.get_value(DATA, REMAINING)
 
     @property
-    def data_remaining_last_update(self):
+    def data_remaining_last_update(self) -> datetime.datetime | None:
         """Return remaining data for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(DATA, LAST_UPDATE))
+        return self._get_datetime_from_value(DATA, LAST_UPDATE)
 
     @property
-    def is_data_remaining_supported(self):
+    def is_data_remaining_supported(self) -> bool:
         """Return true if remaining data for the plan is supported."""
-        if self.get_value(DATA, REMAINING):
-            return True
-        return False
+        return bool(self.get_value(DATA, REMAINING))
 
-    # DATA - Used
     @property
-    def data_used(self):
+    def data_used(self) -> str | None:
         """Return used data for the plan."""
         return self.get_value(DATA, USED)
 
     @property
-    def data_used_last_update(self):
+    def data_used_last_update(self) -> datetime.datetime | None:
         """Return used data for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(DATA, LAST_UPDATE))
+        return self._get_datetime_from_value(DATA, LAST_UPDATE)
 
     @property
-    def is_data_used_supported(self):
+    def is_data_used_supported(self) -> bool:
         """Return true if used data for the plan is supported."""
-        if self.get_value(DATA, USED):
-            return True
-        return False
+        return bool(self.get_value(DATA, USED))
 
-    # DATA - Total
     @property
-    def data_total(self):
+    def data_total(self) -> str | None:
         """Return total data for the plan."""
         return self.get_value(DATA, TOTAL)
 
     @property
-    def data_total_last_update(self):
+    def data_total_last_update(self) -> datetime.datetime | None:
         """Return total data for the plan last update timestamp."""
-        return datetime.datetime.fromisoformat(self.get_value(DATA, LAST_UPDATE))
+        return self._get_datetime_from_value(DATA, LAST_UPDATE)
 
     @property
-    def is_data_total_supported(self):
+    def is_data_total_supported(self) -> bool:
         """Return true if total data for the plan is supported."""
-        if self.get_value(DATA, TOTAL):
-            return True
-        return False
+        return bool(self.get_value(DATA, TOTAL))
 
     #
     # BILLING
     #
 
-    # BILLING - Current Summary
     @property
-    def billing_current_summary(self):
+    def billing_current_summary(self) -> str | None:
         """Return current billing summary."""
         return self.get_billing_value(CURRENT_SUMMARY)
 
     @property
-    def billing_current_summary_last_update(self):
+    def billing_current_summary_last_update(self) -> datetime.datetime:
         """Return current billing summary last update timestamp."""
-        return datetime.datetime.now(datetime.UTC)
+        return datetime.datetime.now(datetime.timezone.utc)
 
     @property
-    def is_billing_current_summary_supported(self):
+    def is_billing_current_summary_supported(self) -> bool:
         """Return true if current billing summary is supported."""
-        if self.get_billing_value(CURRENT_SUMMARY):
-            return True
-        return False
+        return bool(self.get_billing_value(CURRENT_SUMMARY))
 
-    # BILLING - Last Summary
     @property
-    def billing_last_summary(self):
+    def billing_last_summary(self) -> str | None:
         """Return last billing summary."""
         return self.get_billing_value(LAST_SUMMARY)
 
     @property
-    def billing_last_summary_last_update(self):
+    def billing_last_summary_last_update(self) -> datetime.datetime:
         """Return last billing summary last update timestamp."""
-        return datetime.datetime.now(datetime.UTC)
+        return datetime.datetime.now(datetime.timezone.utc)
 
     @property
-    def is_billing_last_summary_supported(self):
+    def is_billing_last_summary_supported(self) -> bool:
         """Return true if last billing summary is supported."""
-        if self.get_billing_value(LAST_SUMMARY):
-            return True
-        return False
+        return bool(self.get_billing_value(LAST_SUMMARY))
 
-    # BILLING - Cycle Days
     @property
-    def billing_cycle_days(self):
+    def billing_cycle_days(self) -> int | None:
         """Return days until end of the billing cycle."""
         if not self.billing_cycle_end:
             return None
 
-        datetime_now = datetime.datetime.now(datetime.UTC).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        cycle_end = datetime.datetime.strptime(
-            self.billing_cycle_end, "%Y-%m-%d"
-        ).replace(tzinfo=datetime.UTC)
-        delta = cycle_end - datetime_now
-
-        return delta.days
+        try:
+            datetime_now = datetime.datetime.now(datetime.timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            cycle_end = datetime.datetime.strptime(
+                self.billing_cycle_end, ISO_DATE_FORMAT
+            ).replace(tzinfo=datetime.timezone.utc)
+            delta = cycle_end - datetime_now
+            return delta.days
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning("Failed to calculate billing cycle days: %s", err)
+            return None
 
     @property
-    def billing_cycle_days_last_update(self):
+    def billing_cycle_days_last_update(self) -> datetime.datetime:
         """Return days until end of the billing cycle last update timestamp."""
-        return datetime.datetime.now(datetime.UTC)
+        return datetime.datetime.now(datetime.timezone.utc)
 
     @property
-    def is_billing_cycle_days_supported(self):
+    def is_billing_cycle_days_supported(self) -> bool:
         """Return true if days until end of the billing cycle is supported."""
-        if self.billing_cycle_end:
-            return True
-        return False
+        return bool(self.billing_cycle_end)
 
-    # BILLING - Cycle Start Date
     @property
-    def billing_cycle_start(self):
+    def billing_cycle_start(self) -> str | None:
         """Return billing cycle start date."""
         return self.get_billing_value(CYCLE_START)
 
-    # BILLING - Cycle End Date
     @property
-    def billing_cycle_end(self):
+    def billing_cycle_end(self) -> str | None:
         """Return billing cycle end date."""
         return self.get_billing_value(CYCLE_END)

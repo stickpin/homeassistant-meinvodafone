@@ -224,29 +224,82 @@ class MeinVodafoneAPI:
                                 if aggregation:
                                     last_update_time = None
                                     usage_details = usage_data.get("usage", [])
+                                    unit_of_measure = "MB"
+
                                     if usage_details:
                                         last_update_time = usage_details[0].get(
                                             "lastUpdateDate"
                                         )
+                                        unit_of_measure = usage_details[0].get(
+                                            "unitOfMeasure", "MB"
+                                        )
+
+                                    remaining = aggregation.get("aggregateRemaining")
+                                    used = aggregation.get("aggregateUsed")
+                                    total = aggregation.get("aggregateTotal")
+
+                                    # Skip if aggregated values are suspicious
+                                    if not all(
+                                        [
+                                            self._is_valid_data_value(
+                                                remaining, unit_of_measure
+                                            ),
+                                            self._is_valid_data_value(
+                                                used, unit_of_measure
+                                            ),
+                                            self._is_valid_data_value(
+                                                total, unit_of_measure
+                                            ),
+                                        ]
+                                    ):
+                                        _LOGGER.debug(
+                                            "Skipping aggregated values with suspicious data"
+                                        )
+                                        continue
 
                                     data = {
                                         NAME: aggregation.get("name"),
-                                        REMAINING: aggregation.get(
-                                            "aggregateRemaining"
-                                        ),
-                                        USED: aggregation.get("aggregateUsed"),
-                                        TOTAL: aggregation.get("aggregateTotal"),
+                                        REMAINING: remaining,
+                                        USED: used,
+                                        TOTAL: total,
                                         LAST_UPDATE: last_update_time,
                                     }
                                     contract_usage_data[container_name].append(data)
                                 else:
                                     usage_details = usage_data.get("usage", [])
                                     for usage_item in usage_details:
+                                        unit_of_measure = usage_item.get(
+                                            "unitOfMeasure", "MB"
+                                        )
+                                        remaining = usage_item.get("remaining")
+                                        used = usage_item.get("used")
+                                        total = usage_item.get("total")
+
+                                        # Skip this item if any value is suspicious
+                                        if not all(
+                                            [
+                                                self._is_valid_data_value(
+                                                    remaining, unit_of_measure
+                                                ),
+                                                self._is_valid_data_value(
+                                                    used, unit_of_measure
+                                                ),
+                                                self._is_valid_data_value(
+                                                    total, unit_of_measure
+                                                ),
+                                            ]
+                                        ):
+                                            _LOGGER.debug(
+                                                "Skipping usage item with suspicious values: %s",
+                                                usage_item.get("name"),
+                                            )
+                                            continue
+
                                         data = {
                                             NAME: usage_item.get("name"),
-                                            REMAINING: usage_item.get("remaining"),
-                                            USED: usage_item.get("used"),
-                                            TOTAL: usage_item.get("total"),
+                                            REMAINING: remaining,
+                                            USED: used,
+                                            TOTAL: total,
                                             LAST_UPDATE: usage_item.get(
                                                 "lastUpdateDate"
                                             ),
@@ -287,3 +340,34 @@ class MeinVodafoneAPI:
                 "status_code": None,
                 "error_message": str(error),
             }
+
+    def _is_valid_data_value(self, value: str | int | None, unit: str) -> bool:
+        """Validate data values to detect incorrect/glitched values.
+
+        Args:
+            value: The numeric value as string or int
+            unit: The reported unit of measure
+
+        Returns:
+            True if value seems valid, False if suspicious
+        """
+        if value is None:
+            return True  # None is acceptable
+
+        try:
+            numeric_value = int(value)
+
+            # Flag suspicious values: if reported as MB but > 500000 (~500GB)
+            # it's likely a server glitch reporting KB as MB
+            if unit == "MB" and numeric_value > 500000:
+                _LOGGER.warning(
+                    "Ignoring suspicious data value: %s %s (likely server glitch)",
+                    numeric_value,
+                    unit,
+                )
+                return False
+
+            return True
+        except (ValueError, TypeError):
+            _LOGGER.warning("Invalid data value format: %s", value)
+            return False

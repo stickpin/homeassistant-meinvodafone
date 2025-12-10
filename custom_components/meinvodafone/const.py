@@ -3,6 +3,7 @@
 DOMAIN = "meinvodafone"
 COORDINATOR = "meinvodafone_coordinator"
 MEINVODAFONE_API = "meinvodafone_api"
+MEINVODAFONE_API_POOL = "meinvodafone_api_pool"
 
 DEFAULT_UPDATE_INTERVAL = 15
 MAX_UPDATE_RETRY_COUNT = 2

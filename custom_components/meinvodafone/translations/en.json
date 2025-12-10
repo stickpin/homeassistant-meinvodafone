@@ -25,7 +25,7 @@
       }
     },
     "abort": {
-      "already_configured": "Contact is already configured",
+      "already_configured": "This contract is already configured",
       "reauth_successful": "Re-authentication was successful"
     },
     "error": {

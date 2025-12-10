@@ -9,10 +9,11 @@
         "description": "Fill in MeinVodafone information"
       },
       "select_contract": {
+        "title": "Contract",
+        "description": "The following contracts was found. Please select the contract you wish to monitor",
         "data": {
-          "contract_id": "Contract"
-        },
-        "description": "Select your Vodafone contract"
+          "contract_id": "Contract Number"
+        }
       },
       "reauth_confirm": {
         "data": {
@@ -31,7 +32,7 @@
     },
     "abort": {
       "already_configured": "This contract is already configured",
-      "reauth_successful": "Re-authentication successful"
+      "reauth_successful": "Re-authentication was successful"
     }
   }
 }

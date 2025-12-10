@@ -119,9 +119,8 @@ class MeinVodafoneConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(self.contract_id)
             self._abort_if_unique_id_configured()
 
-            # Clean up the API session used for setup
-            if self.api:
-                await self.api.session.close()
+            # Don't close API session - it will be managed by the pool
+            # The session used during setup will be garbage collected
 
             return self.async_create_entry(
                 title=self.contract_id,

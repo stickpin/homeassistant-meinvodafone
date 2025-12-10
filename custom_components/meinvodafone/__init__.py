@@ -12,22 +12,21 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .MeinVodafoneAPIPool import MeinVodafoneAPIPool
 from .const import (
     CONTRACT_ID,
     COORDINATOR,
     DATA_LISTENER,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
+    MEINVODAFONE_API_POOL,
     REQUEST_TIMEOUT,
 )
-from .MeinVodafoneAPI import MeinVodafoneAPI
 from .MeinVodafoneContract import MeinVodafoneContract
 from .MeinVodafoneEntities import MeinVodafoneEntities
 
 _LOGGER = logging.getLogger(__name__)
 
-# List of platforms to support. There should be a matching .py file for each,
-# eg <cover.py> and <sensor.py>
 PLATFORMS: list[str] = ["sensor"]
 
 
@@ -35,6 +34,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     """Set up MeinVodafone from a config entry."""
 
     hass.data.setdefault(DOMAIN, {})
+
+    # Create API pool if it doesn't exist (shared across all entries)
+    if MEINVODAFONE_API_POOL not in hass.data[DOMAIN]:
+        hass.data[DOMAIN][MEINVODAFONE_API_POOL] = MeinVodafoneAPIPool()
 
     update_interval = timedelta(minutes=DEFAULT_UPDATE_INTERVAL)
 
@@ -56,13 +59,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         entry_data = hass.data[DOMAIN].pop(entry.entry_id)
 
-        # Clean up API session
-        coordinator = entry_data.get(COORDINATOR)
-        if coordinator and coordinator.api:
-            await coordinator.api.session.close()
-
         if DATA_LISTENER in entry_data:
             entry_data[DATA_LISTENER]()
+
+        # Note: Don't close API session here - it might be used by other contracts
+        # The session will be closed when all entries for that username are removed
+
+    # If this was the last entry, clean up the API pool
+    if (
+        not hass.data[DOMAIN]
+        or len([k for k in hass.data[DOMAIN] if k != MEINVODAFONE_API_POOL]) == 0
+    ):
+        if MEINVODAFONE_API_POOL in hass.data[DOMAIN]:
+            await hass.data[DOMAIN][MEINVODAFONE_API_POOL].close_all()
+            del hass.data[DOMAIN][MEINVODAFONE_API_POOL]
 
     return unload_ok
 
@@ -87,7 +97,10 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
         if not username or not password:
             raise ValueError("Username and password are required")
 
-        self.api = MeinVodafoneAPI(username, password)
+        # Get shared API instance from pool
+        api_pool: MeinVodafoneAPIPool = hass.data[DOMAIN][MEINVODAFONE_API_POOL]
+        self.api = api_pool.get_or_create(username, password)
+        self.username = username  # Store for potential cleanup
 
         super().__init__(
             hass, _LOGGER, name=DOMAIN, update_interval=self.update_interval

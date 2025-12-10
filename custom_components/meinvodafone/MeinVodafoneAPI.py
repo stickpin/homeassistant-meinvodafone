@@ -222,6 +222,7 @@ class MeinVodafoneAPI:
                             if container_name:
                                 aggregation = usage_data.get("vluxgateAgg")
                                 if aggregation:
+                                    # Handle aggregated usage data
                                     last_update_time = None
                                     usage_details = usage_data.get("usage", [])
                                     unit_of_measure = "MB"
@@ -238,19 +239,9 @@ class MeinVodafoneAPI:
                                     used = aggregation.get("aggregateUsed")
                                     total = aggregation.get("aggregateTotal")
 
-                                    # Skip if aggregated values are suspicious
-                                    if not all(
-                                        [
-                                            self._is_valid_data_value(
-                                                remaining, unit_of_measure
-                                            ),
-                                            self._is_valid_data_value(
-                                                used, unit_of_measure
-                                            ),
-                                            self._is_valid_data_value(
-                                                total, unit_of_measure
-                                            ),
-                                        ]
+                                    # Validate aggregated values
+                                    if not self._validate_usage_values(
+                                        remaining, used, total, unit_of_measure
                                     ):
                                         _LOGGER.debug(
                                             "Skipping aggregated values with suspicious data"
@@ -266,6 +257,7 @@ class MeinVodafoneAPI:
                                     }
                                     contract_usage_data[container_name].append(data)
                                 else:
+                                    # Handle individual usage items
                                     usage_details = usage_data.get("usage", [])
                                     for usage_item in usage_details:
                                         unit_of_measure = usage_item.get(
@@ -275,19 +267,9 @@ class MeinVodafoneAPI:
                                         used = usage_item.get("used")
                                         total = usage_item.get("total")
 
-                                        # Skip this item if any value is suspicious
-                                        if not all(
-                                            [
-                                                self._is_valid_data_value(
-                                                    remaining, unit_of_measure
-                                                ),
-                                                self._is_valid_data_value(
-                                                    used, unit_of_measure
-                                                ),
-                                                self._is_valid_data_value(
-                                                    total, unit_of_measure
-                                                ),
-                                            ]
+                                        # Validate individual item values
+                                        if not self._validate_usage_values(
+                                            remaining, used, total, unit_of_measure
                                         ):
                                             _LOGGER.debug(
                                                 "Skipping usage item with suspicious values: %s",
@@ -333,13 +315,35 @@ class MeinVodafoneAPI:
             }
         except Exception as error:
             _LOGGER.error(
-                "Error during the contract usage details retrieval process: %s",
+                "Error during the contract usage details retrieval: %s",
                 error,
             )
             return {
                 "status_code": None,
                 "error_message": str(error),
             }
+
+    def _validate_usage_values(
+        self, remaining: Any, used: Any, total: Any, unit: str
+    ) -> bool:
+        """Validate remaining, used, and total usage values.
+
+        Args:
+            remaining: The remaining value
+            used: The used value
+            total: The total value
+            unit: The unit of measure
+
+        Returns:
+            True if all values are valid, False otherwise
+        """
+        return all(
+            [
+                self._is_valid_data_value(remaining, unit),
+                self._is_valid_data_value(used, unit),
+                self._is_valid_data_value(total, unit),
+            ]
+        )
 
     def _is_valid_data_value(self, value: str | int | None, unit: str) -> bool:
         """Validate data values to detect incorrect/glitched values.

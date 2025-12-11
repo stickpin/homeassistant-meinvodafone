@@ -8,6 +8,8 @@ MEINVODAFONE_API_POOL = "meinvodafone_api_pool"
 DEFAULT_UPDATE_INTERVAL = 15
 MAX_UPDATE_RETRY_COUNT = 2
 REQUEST_TIMEOUT = 10
+MIN_LOGIN_DELAY = 5
+API_TIMEOUT = 60  # seconds
 
 MINT_HOST = "https://www.vodafone.de/mint"
 API_HOST = "https://www.vodafone.de/api"

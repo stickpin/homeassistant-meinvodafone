@@ -8,6 +8,7 @@ from aiohttp import ClientError, ClientSession
 
 from .const import (
     API_HOST,
+    API_TIMEOUT,
     BILLING,
     CURRENT_SUMMARY,
     CYCLE_END,
@@ -29,8 +30,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-API_TIMEOUT = 60  # seconds
-
 
 class MeinVodafoneAPI:
     """Main MeinVodafone API class to MeinVodafone services."""
@@ -40,15 +39,17 @@ class MeinVodafoneAPI:
         self.username = username
         self.password = password
         self.session = ClientSession()
+        self.is_authenticated = False
 
     async def close(self) -> None:
         """Close the API session."""
         if self.session:
             await self.session.close()
+        self.is_authenticated = False
 
     async def login(self) -> bool:
         """Start session API."""
-        _LOGGER.debug("Initiating new login")
+        _LOGGER.debug("Initiating new login for %s", self.username)
 
         try:
             payload = {
@@ -74,6 +75,7 @@ class MeinVodafoneAPI:
                     response_data = await response.json()
                     _LOGGER.debug("Response: %s", response_data)
                     if response_data.get("userId"):
+                        self.is_authenticated = True
                         return True
                 else:
                     response_text = await response.text()
@@ -83,12 +85,15 @@ class MeinVodafoneAPI:
                         response.status,
                         response_text,
                     )
+                self.is_authenticated = False
                 return False
         except ClientError as error:
             _LOGGER.error("Network error during login: %s", error)
+            self.is_authenticated = False
             return False
         except Exception as error:
             _LOGGER.error("Error during the login process: %s", error)
+            self.is_authenticated = False
             return False
 
     async def get_contracts(self) -> list[str]:

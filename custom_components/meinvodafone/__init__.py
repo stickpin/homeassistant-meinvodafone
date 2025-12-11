@@ -110,13 +110,27 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
         """Fetch data."""
         _LOGGER.debug("Starting data update for contract %s", self.contract_id)
         try:
+            # Get API pool reference
+            api_pool: MeinVodafoneAPIPool = self.hass.data[DOMAIN][
+                MEINVODAFONE_API_POOL
+            ]
+
+            # Ensure authenticated before fetching data
+            if not await api_pool.ensure_authenticated(self.api, self.username):
+                raise ConfigEntryAuthFailed(
+                    f"Authentication failed for {self.contract_id}"
+                )
+
             async with asyncio.timeout(REQUEST_TIMEOUT):
                 data = await self.api.get_contract_usage(self.contract_id)
                 status_code = data.get("status_code")
 
                 if status_code == 401:  # Unauthorized
                     _LOGGER.debug("Session expired, attempting re-login")
-                    if await self.api.login():
+
+                    # Mark as unauthenticated and try again
+                    self.api.is_authenticated = False
+                    if await api_pool.ensure_authenticated(self.api, self.username):
                         data = await self.api.get_contract_usage(self.contract_id)
                         if data.get("status_code") == 200:
                             return await self.update(data.get("usage_data", {}))

@@ -121,26 +121,34 @@ class MeinVodafoneCoordinator(DataUpdateCoordinator):
                     f"Authentication failed for {self.contract_id}"
                 )
 
-            async with asyncio.timeout(REQUEST_TIMEOUT):
-                data = await self.api.get_contract_usage(self.contract_id)
-                status_code = data.get("status_code")
+            data = await self.api.get_contract_usage(self.contract_id)
+            status_code = data.get("status_code")
 
-                if status_code == 401:  # Unauthorized
-                    _LOGGER.debug("Session expired, attempting re-login")
+            if status_code == 401:  # Unauthorized
+                _LOGGER.debug("Session expired, attempting re-login")
 
-                    # Mark as unauthenticated and try again
-                    self.api.is_authenticated = False
-                    if await api_pool.ensure_authenticated(self.api, self.username):
-                        data = await self.api.get_contract_usage(self.contract_id)
-                        if data.get("status_code") == 200:
-                            return await self.update(data.get("usage_data", {}))
-                    raise ConfigEntryAuthFailed(
-                        f"Authentication failed for {self.contract_id}"
-                    )
-                elif status_code != 200:
-                    raise UpdateFailed(f"Failed to fetch data: status {status_code}")
+                # Mark as unauthenticated and try again
+                self.api.is_authenticated = False
+                if await api_pool.ensure_authenticated(self.api, self.username):
+                    data = await self.api.get_contract_usage(self.contract_id)
+                    if data.get("status_code") == 200:
+                        return await self.update(data.get("usage_data", {}))
+                raise ConfigEntryAuthFailed(
+                    f"Authentication failed for {self.contract_id}"
+                )
+            elif status_code and 500 <= status_code < 600:
+                # Server error after retries - keep existing data
+                _LOGGER.warning(
+                    "Server error (status %s) persists after retries. "
+                    "Keeping existing sensor data unchanged.",
+                    status_code,
+                )
+                # Return the existing contract data without updating
+                return self.contract
+            elif status_code != 200:
+                raise UpdateFailed(f"Failed to fetch data: status {status_code}")
 
-                return await self.update(data.get("usage_data", {}))
+            return await self.update(data.get("usage_data", {}))
         except asyncio.TimeoutError as err:
             raise UpdateFailed("Timeout fetching data") from err
         except ConfigEntryAuthFailed:

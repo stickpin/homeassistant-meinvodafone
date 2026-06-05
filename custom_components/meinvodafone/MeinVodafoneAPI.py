@@ -5,8 +5,9 @@ import hashlib
 import logging
 import secrets
 import time
+import asyncio
 from typing import Any
-
+from functools import wraps
 from aiohttp import ClientError, ClientSession
 
 from .const import (
@@ -33,6 +34,63 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def retry_on_server_error(max_retries: int = 3, delay: int = 10):
+    """Decorator to retry API calls on server errors (5xx status codes)."""
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(max_retries):
+                try:
+                    result = await func(*args, **kwargs)
+
+                    # Check if result contains a status_code key indicating server error
+                    if isinstance(result, dict) and "status_code" in result:
+                        status_code = result.get("status_code")
+                        if status_code and 500 <= status_code < 600:
+                            if attempt < max_retries - 1:
+                                _LOGGER.warning(
+                                    "Server error (status %s) on attempt %d/%d, retrying in %d seconds...",
+                                    status_code,
+                                    attempt + 1,
+                                    max_retries,
+                                    delay,
+                                )
+                                await asyncio.sleep(delay)
+                                continue
+                            else:
+                                _LOGGER.warning(
+                                    "Server error (status %s) after %d attempts, giving up",
+                                    status_code,
+                                    max_retries,
+                                )
+
+                    return result
+                except Exception as error:
+                    last_error = error
+                    if attempt < max_retries - 1:
+                        _LOGGER.warning(
+                            "Error on attempt %d/%d: %s, retrying in %d seconds...",
+                            attempt + 1,
+                            max_retries,
+                            error,
+                            delay,
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        _LOGGER.error("Error after %d attempts: %s", max_retries, error)
+                        raise
+
+            if last_error:
+                raise last_error
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 class MeinVodafoneAPI:
@@ -219,6 +277,7 @@ class MeinVodafoneAPI:
 
         return contracts
 
+    @retry_on_server_error(max_retries=5, delay=10)
     async def get_contract_usage(self, contract_number: str) -> dict[str, Any]:
         """Get usage data API."""
         if not contract_number:

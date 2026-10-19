@@ -312,6 +312,7 @@ class MeinVodafoneAPI:
                 "sms": SMS,
                 "daten": DATA,
                 "d_eu_data": DATA,
+                "d_eu_data_year": DATA,
                 "d_eu_flat_allnet_units": MINUTES,
                 "d_int_units": SMS,
             }
